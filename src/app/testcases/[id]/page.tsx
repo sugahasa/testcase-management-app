@@ -95,6 +95,24 @@ export default function TestCaseDetailPage({ params }: { params: Promise<{ id: s
     setEditingStepId(null);
   };
 
+  const handleMoveStep = async (index: number, direction: "up" | "down") => {
+    if (!testCase) return;
+    const steps = [...testCase.steps];
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= steps.length) return;
+    [steps[index], steps[targetIndex]] = [steps[targetIndex], steps[index]];
+    const orderedIds = steps.map((s) => s.id);
+
+    // Optimistic update
+    setTestCase((prev) => prev ? { ...prev, steps } : prev);
+
+    await fetch(`/api/testcases/${id}/steps/reorder`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderedIds }),
+    });
+  };
+
   if (loading) return <p className="text-gray-400 text-sm">読み込み中...</p>;
   if (!testCase) return <p className="text-red-500">テストケースが見つかりません</p>;
 
@@ -279,6 +297,24 @@ export default function TestCaseDetailPage({ params }: { params: Promise<{ id: s
                 </div>
               ) : (
                 <div className="flex items-start gap-3">
+                  <div className="flex flex-col gap-0.5 shrink-0 pt-0.5">
+                    <button
+                      onClick={() => handleMoveStep(i, "up")}
+                      disabled={i === 0}
+                      className="text-gray-300 hover:text-gray-600 disabled:opacity-20 disabled:cursor-not-allowed leading-none text-xs"
+                      title="上へ移動"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      onClick={() => handleMoveStep(i, "down")}
+                      disabled={i === testCase.steps.length - 1}
+                      className="text-gray-300 hover:text-gray-600 disabled:opacity-20 disabled:cursor-not-allowed leading-none text-xs"
+                      title="下へ移動"
+                    >
+                      ▼
+                    </button>
+                  </div>
                   <span className="text-xs font-bold text-gray-400 pt-0.5 w-5 shrink-0">#{i + 1}</span>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm">{step.summary}</p>
