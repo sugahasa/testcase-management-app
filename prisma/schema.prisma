@@ -30,11 +30,19 @@ model TestStep {
 }
 
 model TestProject {
-  id        String     @id @default(cuid())
-  name      String
-  cases     TestProjectCase[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id          String          @id @default(cuid())
+  name        String
+  description String          @default("")
+  projectType ProjectType     @default(MANUAL)
+  testPlan    String          @default("")
+  cases       TestProjectCase[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+enum ProjectType {
+  MANUAL
+  AUTOMATED
 }
 
 model TestProjectCase {

@@ -20,6 +20,30 @@ export async function GET(_req: Request, { params }: Params) {
   return NextResponse.json(project);
 }
 
+export async function PUT(req: Request, { params }: Params) {
+  const { id } = await params;
+  const body = await req.json();
+  const { name, description, projectType, testPlan } = body;
+  const project = await prisma.testProject.update({
+    where: { id },
+    data: {
+      name,
+      description: description ?? "",
+      projectType: projectType ?? "MANUAL",
+      testPlan: testPlan ?? "",
+    },
+    include: {
+      cases: {
+        include: {
+          testCase: { include: { steps: { orderBy: { order: "asc" } } } },
+          stepResults: true,
+        },
+      },
+    },
+  });
+  return NextResponse.json(project);
+}
+
 export async function DELETE(_req: Request, { params }: Params) {
   const { id } = await params;
   await prisma.testProject.delete({ where: { id } });

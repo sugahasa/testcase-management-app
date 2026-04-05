@@ -1,4 +1,5 @@
 export type Priority = "HIGH" | "MEDIUM" | "LOW";
+export type ProjectType = "MANUAL" | "AUTOMATED";
 export type TestType = "FUNCTIONAL" | "REGRESSION" | "PERFORMANCE" | "SECURITY" | "USABILITY" | "OTHER";
 export type StepResult = "NOT_EXECUTED" | "PASSED" | "FAILED" | "BLOCKED";
 
@@ -40,10 +41,18 @@ export interface TestProjectCase {
 export interface TestProject {
   id: string;
   name: string;
+  description: string;
+  projectType: ProjectType;
+  testPlan: string;
   cases: TestProjectCase[];
   createdAt: string;
   updatedAt: string;
 }
+
+export const PROJECT_TYPE_LABEL: Record<ProjectType, string> = {
+  MANUAL: "手動テスト",
+  AUTOMATED: "自動テスト",
+};
 
 export const PRIORITY_LABEL: Record<Priority, string> = {
   HIGH: "高",

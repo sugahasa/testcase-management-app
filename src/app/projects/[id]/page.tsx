@@ -3,19 +3,27 @@
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import ReactMarkdown from "react-markdown";
 import {
   TestProject,
   TestCase,
   TestProjectCase,
   StepResult,
+  ProjectType,
   PRIORITY_LABEL,
   PRIORITY_COLOR,
   TEST_TYPE_LABEL,
   STEP_RESULT_LABEL,
   STEP_RESULT_COLOR,
+  PROJECT_TYPE_LABEL,
 } from "@/lib/types";
 
 const STEP_RESULTS: StepResult[] = ["NOT_EXECUTED", "PASSED", "FAILED", "BLOCKED"];
+
+const PROJECT_TYPE_COLOR: Record<ProjectType, string> = {
+  MANUAL: "bg-gray-100 text-gray-600",
+  AUTOMATED: "bg-purple-100 text-purple-700",
+};
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -27,6 +35,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const [showAddCase, setShowAddCase] = useState(false);
   const [expandedCaseIds, setExpandedCaseIds] = useState<Set<string>>(new Set());
 
+  // edit state
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editProjectType, setEditProjectType] = useState<ProjectType>("MANUAL");
+  const [editTestPlan, setEditTestPlan] = useState("");
+  const [testPlanTab, setTestPlanTab] = useState<"edit" | "preview">("edit");
+
   useEffect(() => {
     Promise.all([
       fetch(`/api/projects/${id}`).then((r) => r.json()),
@@ -37,6 +53,31 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       setLoading(false);
     });
   }, [id]);
+
+  const startEditing = (proj: TestProject) => {
+    setEditName(proj.name);
+    setEditDescription(proj.description);
+    setEditProjectType(proj.projectType);
+    setEditTestPlan(proj.testPlan);
+    setEditing(true);
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const res = await fetch(`/api/projects/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: editName,
+        description: editDescription,
+        projectType: editProjectType,
+        testPlan: editTestPlan,
+      }),
+    });
+    const updated = await res.json();
+    setProject(updated);
+    setEditing(false);
+  };
 
   const addedCaseIds = new Set(project?.cases.map((c) => c.testCaseId) ?? []);
   const availableCases = allTestCases.filter((tc) => !addedCaseIds.has(tc.id));
@@ -106,15 +147,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const calcProgress = (projectCase: TestProjectCase) => {
     const steps = projectCase.testCase.steps;
     if (steps.length === 0) return null;
-    const passed = steps.filter(
-      (s) => getStepResult(projectCase, s.id) === "PASSED"
-    ).length;
-    const failed = steps.filter(
-      (s) => getStepResult(projectCase, s.id) === "FAILED"
-    ).length;
-    const blocked = steps.filter(
-      (s) => getStepResult(projectCase, s.id) === "BLOCKED"
-    ).length;
+    const passed = steps.filter((s) => getStepResult(projectCase, s.id) === "PASSED").length;
+    const failed = steps.filter((s) => getStepResult(projectCase, s.id) === "FAILED").length;
+    const blocked = steps.filter((s) => getStepResult(projectCase, s.id) === "BLOCKED").length;
     const notExecuted = steps.length - passed - failed - blocked;
     return { total: steps.length, passed, failed, blocked, notExecuted };
   };
@@ -131,22 +166,139 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* Header */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm mb-6 flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold">{project.name}</h1>
-          <p className="text-sm text-gray-400 mt-1">{project.cases.length} テストケース</p>
-        </div>
-        <button
-          onClick={async () => {
-            if (!confirm("このプロジェクトを削除しますか？")) return;
-            await fetch(`/api/projects/${id}`, { method: "DELETE" });
-            router.push("/projects");
-          }}
-          className="text-sm px-3 py-1.5 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 shrink-0"
-        >
-          削除
-        </button>
+      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm mb-6">
+        {editing ? (
+          <form onSubmit={handleUpdate} className="flex flex-col gap-3">
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">プロジェクト名 *</label>
+              <input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">概要</label>
+              <textarea
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                rows={2}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">種別</label>
+              <div className="flex gap-3">
+                {(["MANUAL", "AUTOMATED"] as ProjectType[]).map((t) => (
+                  <label key={t} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="editProjectType"
+                      value={t}
+                      checked={editProjectType === t}
+                      onChange={() => setEditProjectType(t)}
+                      className="accent-blue-600"
+                    />
+                    <span className="text-sm">{PROJECT_TYPE_LABEL[t]}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            {editProjectType === "AUTOMATED" && (
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">テスト計画（Markdown）</label>
+                <div className="border border-gray-300 rounded-lg overflow-hidden">
+                  <div className="flex border-b border-gray-200 bg-gray-50">
+                    {(["edit", "preview"] as const).map((tab) => (
+                      <button
+                        key={tab}
+                        type="button"
+                        onClick={() => setTestPlanTab(tab)}
+                        className={`px-4 py-1.5 text-xs font-medium transition-colors ${
+                          testPlanTab === tab
+                            ? "bg-white text-blue-600 border-b-2 border-blue-600"
+                            : "text-gray-500 hover:text-gray-700"
+                        }`}
+                      >
+                        {tab === "edit" ? "編集" : "プレビュー"}
+                      </button>
+                    ))}
+                  </div>
+                  {testPlanTab === "edit" ? (
+                    <textarea
+                      value={editTestPlan}
+                      onChange={(e) => setEditTestPlan(e.target.value)}
+                      rows={10}
+                      placeholder={"# テスト計画\n\n## 目的\n\n## 対象範囲\n\n## 実行方法\n"}
+                      className="w-full px-3 py-2 text-sm font-mono focus:outline-none resize-y"
+                    />
+                  ) : (
+                    <div className="px-4 py-3 min-h-[120px] prose prose-sm max-w-none">
+                      {editTestPlan ? (
+                        <ReactMarkdown>{editTestPlan}</ReactMarkdown>
+                      ) : (
+                        <p className="text-gray-400 text-sm">テスト計画がありません。</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            <div className="flex gap-2 justify-end">
+              <button type="button" onClick={() => setEditing(false)} className="text-sm px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                キャンセル
+              </button>
+              <button type="submit" className="text-sm px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                保存
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl font-bold">{project.name}</h1>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PROJECT_TYPE_COLOR[project.projectType]}`}>
+                  {PROJECT_TYPE_LABEL[project.projectType]}
+                </span>
+              </div>
+              {project.description && (
+                <p className="text-sm text-gray-500 mt-1">{project.description}</p>
+              )}
+              <p className="text-xs text-gray-400 mt-1">{project.cases.length} テストケース</p>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <button
+                onClick={() => startEditing(project)}
+                className="text-sm px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50"
+              >
+                編集
+              </button>
+              <button
+                onClick={async () => {
+                  if (!confirm("このプロジェクトを削除しますか？")) return;
+                  await fetch(`/api/projects/${id}`, { method: "DELETE" });
+                  router.push("/projects");
+                }}
+                className="text-sm px-3 py-1.5 border border-red-200 text-red-600 rounded-lg hover:bg-red-50"
+              >
+                削除
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Test plan (automated, read-only) */}
+      {!editing && project.projectType === "AUTOMATED" && project.testPlan && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm mb-6">
+          <h2 className="text-base font-semibold mb-3">テスト計画</h2>
+          <div className="prose prose-sm max-w-none text-gray-700">
+            <ReactMarkdown>{project.testPlan}</ReactMarkdown>
+          </div>
+        </div>
+      )}
 
       {/* Add test case */}
       <div className="flex items-center justify-between mb-3">
@@ -209,7 +361,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
             return (
               <div key={pc.id} className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                {/* Case header */}
                 <div className="p-4 flex items-center gap-3">
                   <button
                     onClick={() => toggleExpand(pc.id)}
@@ -241,7 +392,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   </button>
                 </div>
 
-                {/* Steps */}
                 {isExpanded && (
                   <div className="border-t border-gray-100">
                     {pc.testCase.steps.length === 0 ? (
