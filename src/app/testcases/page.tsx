@@ -73,8 +73,9 @@ export default function TestCasesPage() {
             </div>
             <div className="flex gap-4">
               <div className="flex-1">
-                <label className="text-sm font-medium text-gray-700 block mb-1">優先度</label>
+                <label htmlFor="priority" className="text-sm font-medium text-gray-700 block mb-1">優先度</label>
                 <select
+                  id="priority"
                   value={priority}
                   onChange={(e) => setPriority(e.target.value as Priority)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -85,8 +86,9 @@ export default function TestCasesPage() {
                 </select>
               </div>
               <div className="flex-1">
-                <label className="text-sm font-medium text-gray-700 block mb-1">テスト種別</label>
+                <label htmlFor="testType" className="text-sm font-medium text-gray-700 block mb-1">テスト種別</label>
                 <select
+                  id="testType"
                   value={testType}
                   onChange={(e) => setTestType(e.target.value as TestType)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
