@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model TestCase {
+  id        String     @id @default(cuid())
+  title     String
+  priority  Priority   @default(MEDIUM)
+  testType  TestType   @default(FUNCTIONAL)
+  steps     TestStep[]
+  projects  TestProjectCase[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model TestStep {
+  id         String     @id @default(cuid())
+  order      Int
+  summary    String
+  detail     String     @default("")
+  testCase   TestCase   @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  testCaseId String
+  results    TestStepResult[]
+}
+
+model TestProject {
+  id        String     @id @default(cuid())
+  name      String
+  cases     TestProjectCase[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model TestProjectCase {
+  id          String     @id @default(cuid())
+  project     TestProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId   String
+  testCase    TestCase   @relation(fields: [testCaseId], references: [id])
+  testCaseId  String
+  stepResults TestStepResult[]
+
+  @@unique([projectId, testCaseId])
+}
+
+model TestStepResult {
+  id                String          @id @default(cuid())
+  projectCase       TestProjectCase @relation(fields: [projectCaseId], references: [id], onDelete: Cascade)
+  projectCaseId     String
+  step              TestStep        @relation(fields: [stepId], references: [id])
+  stepId            String
+  result            StepResult      @default(NOT_EXECUTED)
+  note              String          @default("")
+
+  @@unique([projectCaseId, stepId])
+}
+
+enum Priority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum TestType {
+  FUNCTIONAL
+  REGRESSION
+  PERFORMANCE
+  SECURITY
+  USABILITY
+  OTHER
+}
+
+enum StepResult {
+  NOT_EXECUTED
+  PASSED
+  FAILED
+  BLOCKED
+}
