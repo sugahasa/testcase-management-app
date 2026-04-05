@@ -11,9 +11,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { title, priority, testType } = body;
+  const { title, priority, testType, precondition } = body;
   const testCase = await prisma.testCase.create({
-    data: { title, priority, testType },
+    data: { title, priority, testType, precondition: precondition ?? "" },
     include: { steps: true },
   });
   return NextResponse.json(testCase, { status: 201 });

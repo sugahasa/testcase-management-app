@@ -16,10 +16,10 @@ export async function GET(_req: Request, { params }: Params) {
 export async function PUT(req: Request, { params }: Params) {
   const { id } = await params;
   const body = await req.json();
-  const { title, priority, testType } = body;
+  const { title, priority, testType, precondition } = body;
   const testCase = await prisma.testCase.update({
     where: { id },
-    data: { title, priority, testType },
+    data: { title, priority, testType, precondition: precondition ?? "" },
     include: { steps: { orderBy: { order: "asc" } } },
   });
   return NextResponse.json(testCase);

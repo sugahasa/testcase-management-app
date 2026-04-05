@@ -15,6 +15,7 @@ export default function TestCaseDetailPage({ params }: { params: Promise<{ id: s
   const [title, setTitle] = useState("");
   const [priority, setPriority] = useState<Priority>("MEDIUM");
   const [testType, setTestType] = useState<TestType>("FUNCTIONAL");
+  const [precondition, setPrecondition] = useState("");
 
   // step form
   const [showStepForm, setShowStepForm] = useState(false);
@@ -35,6 +36,7 @@ export default function TestCaseDetailPage({ params }: { params: Promise<{ id: s
         setTitle(data.title);
         setPriority(data.priority);
         setTestType(data.testType);
+        setPrecondition(data.precondition ?? "");
         setLoading(false);
       });
   }, [id]);
@@ -44,7 +46,7 @@ export default function TestCaseDetailPage({ params }: { params: Promise<{ id: s
     const res = await fetch(`/api/testcases/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, priority, testType }),
+      body: JSON.stringify({ title, priority, testType, precondition }),
     });
     const updated = await res.json();
     setTestCase(updated);
@@ -143,6 +145,16 @@ export default function TestCaseDetailPage({ params }: { params: Promise<{ id: s
                 </select>
               </div>
             </div>
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">前提条件</label>
+              <textarea
+                value={precondition}
+                onChange={(e) => setPrecondition(e.target.value)}
+                placeholder="テスト実行前に満たすべき条件を入力"
+                rows={2}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              />
+            </div>
             <div className="flex gap-2 justify-end">
               <button type="button" onClick={() => setEditing(false)} className="text-sm px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
                 キャンセル
@@ -154,7 +166,7 @@ export default function TestCaseDetailPage({ params }: { params: Promise<{ id: s
           </form>
         ) : (
           <div className="flex items-start justify-between gap-4">
-            <div>
+            <div className="flex-1 min-w-0">
               <h1 className="text-xl font-bold">{testCase.title}</h1>
               <div className="flex gap-2 mt-2">
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PRIORITY_COLOR[testCase.priority]}`}>
@@ -164,6 +176,12 @@ export default function TestCaseDetailPage({ params }: { params: Promise<{ id: s
                   {TEST_TYPE_LABEL[testCase.testType]}
                 </span>
               </div>
+              {testCase.precondition && (
+                <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-xs font-semibold text-amber-700 mb-1">前提条件</p>
+                  <p className="text-sm text-amber-900 whitespace-pre-wrap">{testCase.precondition}</p>
+                </div>
+              )}
             </div>
             <div className="flex gap-2 shrink-0">
               <button

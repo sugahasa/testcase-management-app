@@ -8,11 +8,12 @@ datasource db {
 }
 
 model TestCase {
-  id        String     @id @default(cuid())
-  title     String
-  priority  Priority   @default(MEDIUM)
-  testType  TestType   @default(FUNCTIONAL)
-  steps     TestStep[]
+  id            String     @id @default(cuid())
+  title         String
+  priority      Priority   @default(MEDIUM)
+  testType      TestType   @default(FUNCTIONAL)
+  precondition  String     @default("")
+  steps         TestStep[]
   projects  TestProjectCase[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt

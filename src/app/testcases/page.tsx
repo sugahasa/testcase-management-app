@@ -11,6 +11,7 @@ export default function TestCasesPage() {
   const [title, setTitle] = useState("");
   const [priority, setPriority] = useState<Priority>("MEDIUM");
   const [testType, setTestType] = useState<TestType>("FUNCTIONAL");
+  const [precondition, setPrecondition] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -26,13 +27,14 @@ export default function TestCasesPage() {
     const res = await fetch("/api/testcases", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, priority, testType }),
+      body: JSON.stringify({ title, priority, testType, precondition }),
     });
     const created = await res.json();
     setTestCases((prev) => [created, ...prev]);
     setTitle("");
     setPriority("MEDIUM");
     setTestType("FUNCTIONAL");
+    setPrecondition("");
     setShowForm(false);
     setSubmitting(false);
   };
@@ -97,6 +99,16 @@ export default function TestCasesPage() {
                   <option value="OTHER">その他</option>
                 </select>
               </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 block mb-1">前提条件</label>
+              <textarea
+                value={precondition}
+                onChange={(e) => setPrecondition(e.target.value)}
+                placeholder="テスト実行前に満たすべき条件を入力"
+                rows={2}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              />
             </div>
             <div className="flex gap-2 justify-end mt-1">
               <button

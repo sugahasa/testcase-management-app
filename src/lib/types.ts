@@ -15,6 +15,7 @@ export interface TestCase {
   title: string;
   priority: Priority;
   testType: TestType;
+  precondition: string;
   steps: TestStep[];
   createdAt: string;
   updatedAt: string;
