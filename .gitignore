@@ -42,3 +42,12 @@ next-env.d.ts
 
 /src/generated/prisma
 prisma/dev.db
+dev.db
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
